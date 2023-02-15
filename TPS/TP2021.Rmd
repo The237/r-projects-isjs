@@ -1,0 +1,241 @@
+---
+title: "TP 2021"
+author: "Nom de l'auteur"
+date: "Date de rédaction du NoteBook"
+output: html_document
+---
+
+**But du TP** : L’objectif de ce projet est d’évaluer les compétences de chaque étudiant à écrire des codes de
+simulation de variables aléatoires quelconque et leur intégration dans des modèles divers pour analyse. Il a été vu plusieurs méthodes de simulation de variables aléatoires parmi lesquelles le changement de variable et la méthode d’inverse de la fonction de répartition.
+On fait l’étude sur la modélisation de la croissance en diamètre (en $cm$) d’un arbre au sein
+d’une forêt. $X_k$ (k correspond à une année) est le diamètre (en $cm$) à l’instant k, la suite
+$X_0; X_1; · · · ; X_k$ (encore notée ($X_k$)$k≥0$) est un processus (de Markov) qui modélise l’évolution
+annuelle du diamètre d’un arbre ou l’état initial $X_0$ suit une loi normale $X_0 ∼ \mathcal{N} (10.; 1.^2)$ car les arbres sont généralement inventoriés à partir de 10 $cm$. Le diamètre à l’instant $k$ dépend
+de celui à l’instant $k − 1$, ainsi, la loi de transition de $X_{k−1}$ vers $X_k$,$k ≥ 1$ est inspirée d’un modèle de croissance celui de *Gompertz* [Gom25] et peut s’écrire comme suit :
+$$X_k  = D^{1-exp^{-r}}X_{k-1}^{exp^{-r}}\epsilon_{k-1}$$ pour $k≥1$
+
+suite des infos tu TP:
+$$ f(x) = \begin{cases} sin(x) & si & 0<x<\frac{\pi}{2}\\ 0 & sinon\end{cases} 
+$$
+
+# Partie 1 : Ecriture du simulateur de la loi du bruit $\epsilon_k$
+
+Au préalable, il est nécessaire de calculer $F$ et $F^{-1}$ afin d'écrire le simulateur du bruit. Après calculs usuels sur la fonction de répartition, on obtient:
+Par définition, nous avons :
+
+$F(x) = \mathcal{P}(X≤x) =\int_{-\infty}^{x} f(x)dx = \int_{0}^{+\infty} f(x)dx$, ce qui donne :
+
+* Si $x<0$, alors $F(x) = 0$
+* Si $0≤x<\frac{\pi}{2}$, alors $F(x) =\int_{0}^{x} f(t)dt = \int_{0}^{x} cos(t)dt =[-cos(t)]^{x}_{0} =  1- cos(x)$
+* Si $x > \frac{\pi}{2}$, alors $F(x) = 1$ 
+
+D'ou :
+$$ F(x) = \begin{cases} 0 & si & x<0 \\ 1-cos(x) & si & 0≤x<\frac{\pi}{2} \\ 1 & si & x > \frac{\pi}{2} \end{cases}$$
+
+
+
+Pour son inverse, faisons ceci : 
+
+posons $y = F(x) = 1-cos(x)$, donc $cos(x) = 1-y$, en conjugant des deux côtés par $arcos$, on obtient : $y = arcos(1-x)$
+
+D'ou :
+
+$$ F^{-1}(x) = \begin{cases} arcos(1-x) & si  & & 0≤x<1\\ 0 & sinon \end{cases} $$
+```{r}
+#  fonction de répartition de d'epsilon le bruit
+Fforet = function(x){
+  if(x<0){
+    return(0)
+  }
+  else{
+    if((x>=0)&&(x<pi/2)){
+      return (1-cos(x))
+    }else{
+      return(1)  
+    }
+  }
+}
+
+
+# Fonction inverse de la fonction de répartition
+invForest = function(x){
+  if((x>=0)&&(x<=1)){
+    return(acos(1-x))
+  }else{
+    return(0)  
+  }
+}
+
+# fonction pour avoir la quantile d'ordre q
+qForest = function(p){
+  # car q = F^-1(p) et p = F(q)
+  return(invForest(p))
+}
+
+# fonction pour avoir la probabilité
+pForest = function(q){
+  return(Fforet(q))
+}
+
+# fonction densité
+dForest = function(x, log=FALSE){
+  if((x>0)&&(x<pi/2)){
+    if(log==TRUE){
+      return(log(sin(x)))
+    }else{
+      return(sin(x))  
+    }
+  }else{
+    return(0)
+  }
+}
+
+# fonction pour générer les nombres aléatoires tirés de cette loi
+rForest = function(n){
+  return(invForest(runif(n)))
+}
+```
+
+Afin d'effectuer des comparaisons, traçons les fonction de densité et de répartition :
+
+1. Traçé de la fonction de densité
+```{r}
+# Partie 2 : Test des fonction et représentation des histogrammes
+# 
+# on génère des nombres entre -pi et pi afin de représenter la première partie de f(x)
+x1 = seq(from=-pi, to=0, by = .001)
+y1 = rep(0, length(x1))
+plot(x1,y1, xlim = c(-pi,pi),ylim=c(0,1),col="blue")
+# on génères des nombres entre 0 et pi/2 afin de représenter la seconde partie de f(x)
+x2 = seq(from=0, to=pi/2, by=.001)
+points(x2, sin(x2), type='b', col="red")
+
+# cette combinaison nous produit la fonction de densité de f
+```
+
+2. Traçé de la fonction de répartition
+
+```{r}
+# cette dernière sera découpée en 3 parties d'après nos calculs
+
+x1 = seq(from=-pi, to=0, by = .001)
+y1 = rep(0, length(x1))
+plot(x1,y1, xlim = c(-pi,pi),ylim=c(0,1),col="blue")
+# on génères des nombres entre 0 et pi/2 afin de représenter la seconde partie de f(x)
+x2 = seq(from=0, to=pi/2, by=.001)
+points(x2, (1-cos(x2)), type='b', col="red")
+
+# enfin, on génère des nombres de pi/2 à 5 par exemple dont l'ordonée sera 1
+x3 = seq(from=pi/2, to=5, by = .001)
+y3 = rep(1, length(x3))
+points(x3,y3)
+```
+
+3. Traçé de la fonction de densité codée par nous
+
+```{r}
+# on génère des nombres dans [-pi/2; pi]
+
+x = seq(from=-pi/2, to=pi, by=.01)
+y = rep(0, length(x))
+# pour chaque x, on applique la fonction dForest
+for(i in 1:length(x))
+  y[i] = dForest(x[i])
+
+plot(x,y, col="blue", type = "b")
+```
+
+
+4. Traçé de la fonction de répartition codée par nous
+
+```{r}
+# on génère des nombres dans [-pi/2; pi]
+
+x = seq(from=-pi/2, to=pi, by=.01)
+y = rep(0, length(x))
+# pour chaque x, on applique la fonction dForest
+for(i in 1:length(x))
+  y[i] = Fforet(x[i])
+
+plot(x,y, col="blue", type = "b")
+
+```
+
+**En resumé** : les graphes de nos fonction codées sont quasi similaires à ceux des fonction de densités et répartition issues de la définition et des calculs.
+
+# Partie 3 : Utilisation du simulateur de bruit pour simuler les réalisation du modèle de croissance
+
+Dans cette partie, nous allons simuler et tracer un certains nombres de valeurs obtenues à l'issue de cette simulation de notre modèle
+
+```{r}
+D = 150
+r=.3
+X0 = rnorm(1.,10.)
+X = rep(X0,51)
+# initialisation du seed
+set.seed(20)
+eps_k = rForest(50)
+for(i in 2:51){
+  X[i] = (D^(1-exp(-r))* X[i-1]^(exp(-r)))*eps_k[i]
+}
+plot(X,type = 'l', col="blue")
+
+```
+
+Cette simulation laisse croire que le diamètre de l'arbre a tendance a croitre, puis se retrécir. Ce qui semble abérant par rapport à l'ordre naturel des choses. On peut donc conclure que le bruit choisit ne reflète pas fidèlement la réalité.
+
+# Partie 4 : Année de plus grande taille de l'arbre et valeur
+
+En utilisant les données simulées , on a : 
+
+Année Max       | Taille Max
+----------------| ---------------------------
+`r which.max(X)`| `r max(X,na.rm=TRUE)`
+
+# Partie 5 : Simulation de 10 réalisation du modèle sur 50 années, avec graphiques
+
+```{r}
+kmax = 50
+nbRealisations = 10
+newTrajectory = function(){
+  X0 = rnorm(1,10)
+  X = rep(X0,kmax+1)
+  e_k = rForest(kmax)
+  for(i in 1:kmax){
+    X[i+1] = (D^(1-exp(-r))* X[i]^(exp(-r)))*e_k[i]
+  } 
+  return(X)
+}
+
+M = matrix(0, nrow = nbRealisations, ncol = kmax+1)
+for(i in 1:nbRealisations){
+  M[i,] = newTrajectory()
+}
+
+plot(M[1,], type = 'l')
+for(i in 2:nbRealisations){
+  points(M[i,], type = 'l')
+}
+
+```
+
+# Partie 6 : Simulations similaires mais en utilisant un bruit logNormal
+
+
+```{r}
+# initialisation du seed
+set.seed(20)
+X_logNorm = rep(X0,51)
+eps_k_lg = rlnorm(50,0,.02)
+for(i in 2:51){
+  X_logNorm[i] = (D^(1-exp(-r))* X_logNorm[i-1]^(exp(-r)))*eps_k_lg[i]
+}
+plot(X_logNorm,type = 'l', col="red")
+
+```
+
+En utilisant les données simulées , on a : 
+
+Année Max       | Taille Max
+----------------| ---------------------------
+`r which.max(X_logNorm)`| `r max(X_logNorm,na.rm=TRUE)`

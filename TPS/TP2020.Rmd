@@ -1,0 +1,127 @@
+---
+title: "TP de Probabilités 2020"
+author: "Nom de l'auteur"
+date: "28/01/2023"
+output: html_document
+---
+
+**But du TP** : L’objectif de ce projet est d’évaluer vos compétences à écrire des codes de simulation de variables aléatoires données. Il a été vu plusieurs méthodes de simulation parmi lesquelles le changement de variable et la méthode d’inverse de la fonction de répartition.
+L’exercice consiste à simuler des réalisations de la loi normale $\mathcal{N} (\mu; \sigma^2)$ en utilisant la méthode de l’inverse de la fonction de répartition vu en cours. La densité de probabilité de la loi normale s'écrit:
+$$ f(x) = \frac{1}{\sigma*\sqrt{2\pi}}\exp(-\frac{(x-\mu)^2}{2\sigma^2}) $$
+et sa fonction de répartition s'écrit:
+$$ F(x) = \frac{1}{2}(1+erf(\frac{(x-\mu)}{\sigma\sqrt{2}})) $$
+ou erf est la fonction d’erreur de Gauss dont on peut calculer une valeur gr^ace `a la commande (sous R) $erf(x)$ avec x une valeur donnée.
+```{r, echo=TRUE}
+# chargement des librairies ou package nécéssaires
+library(pracma)
+```
+
+
+# Partie 1 : Ecriture des codes des fonction demandées
+Il faut au préalable déterminer l'expression de l'inverse de la fonction de répartition $F(x)$, qui est : 
+$$ F^{-1} =  \sigma\sqrt{2}(erfinv(2x-1))+\mu$$
+puis écrire son code.
+```{r}
+# partout, m est mu et s est sigma, les paramètres de notre loi normale
+# Code de la fonction de répartition F(x)
+FLoiNorm = function(x,m,s){
+  b = erf((x-m)/s*sqrt(2))
+  return(.5*(1+b))
+}
+
+# Code de la l'inverse de la fonction de répartition F-1(x)
+invLoiNorm = function(x,m,s){
+  return((s*sqrt(2)*erfinv((2*x)-1))+m)
+}
+
+# Code de la fonction de calcul des probabilités
+pnorm1 = function(q,m,s){
+  return(FLoiNorm(q,m,s))
+}
+
+# Code de la fonction de calcul des quantiles
+qnorm1 = function(p,m,s){
+  return(invLoiNorm(p,m,s))
+}
+
+# Code de la fonction de densité
+dnorm1 = function(x,m,s){
+  return ((1./(s*sqrt(2*pi)))* exp(-(x-m)^2/(2*(s^2))))
+}
+
+# Code du générateur de nombres aléatoires
+rnorm1 = function(n,m,s){
+  return(invLoiNorm(runif(n),m,s))
+}
+
+# Votre numéro sur la liste
+numListe = 20
+
+# On fixe mu et sigma pour les tests
+mu = 5
+sig = 1.5
+```
+
+
+# Partie 2 : Test des fonctions écrites plus haut au cas par cas
+```{r}
+# test de dnorm1 sur un vecteur de 10 nombres
+x = seq(10)
+print('Les densités des éléments de x sont: ')
+dnorm1(x,m = mu,s = sig)
+print('Les densités générées avec la loi normale de paramètres similaires sont : ')
+dnorm(x,mu, sig)
+
+# Construction d'un graphique avec 50 valeurs pour une meilleure comparaison
+ v = seq(50)
+plot(dnorm1(v,m = mu,s = sig),type = 'l', col="red")
+# le paramètre b est mis pour changer les motifs de la courbe et col pour la couleur
+points(dnorm(v,m = mu,s = sig), type = 'b', col="blue")
+
+# On peut remarquer que les deux courbes se confondent
+```
+
+```{r}
+# test de qnorm sur un vecteur des ordres de quantiles de 0.01 à 0.99 et un pas de 0.05
+
+# Construction d'un graphique pour une meilleure comparaison
+quantiles = seq(from=.01,to = .99, by = .005)
+plot(qnorm(quantiles,m = mu,s = sig),type = 'l', col="blue")
+# le paramètre b est mis pour changer les motifs de la courbe et col pour la couleur
+points(qnorm1(quantiles,m = mu,s = sig), type = 'b', col="red")
+
+# Là aussi les valeurs générées par notre code sont confondues à celles la loi normale interne
+# à R
+```
+
+```{r}
+# test du générateur de nombres aléatoires
+# on initialise le seed avec notre numéro de classe
+set.seed(numListe)
+
+# Construction d'un graphique pour une meilleure comparaison avec des valeurs générées
+plot(rnorm1(100, m = mu, s = sig),type = 'l', col="blue")
+# le paramètre b est mis pour changer les motifs de la courbe et col pour la couleur
+points(rnorm(100, m = mu, s = sig), type = 'b', col="red")
+
+# le bleu représente notre générateur codé
+# les valeurs sont presque similaire dans une tendance générale
+```
+```{r}
+# test de la fonction de calcul des probabilités pnorm1
+
+# seq(1,5,0.01) permet de générer des nombres allant de .1 à 5 avec un pas de .01 
+
+# Construction d'un graphique pour une meilleure comparaison avec des valeurs générées
+plot(pnorm1(seq(.1,5,0.01), m = mu, s = sig),type = 'l', col="blue")
+# le paramètre b est mis pour changer les motifs de la courbe et col pour la couleur
+points(pnorm(seq(.1,5,0.01), m = mu, s = sig), type = 'b', col="red")
+
+# On observe un décallage notoire entre les deux courbes (notre code et pnorm de R) 
+# surtout à partir de la valeur 100, ce qui peut être dû au code interne de la 
+# fonction erf proposée dès le début
+```
+
+
+
+

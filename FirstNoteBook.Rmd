@@ -1,0 +1,92 @@
+---
+title: "Prise en Main R Markdown"
+author: "OWONA Edouard"
+date: "27/01/2023"
+output: html_document
+---
+
+
+# Une introduction à RMarkdown
+
+**Partie 1**
+
+*Pour commencer*
+
+Par souci de reproduction, on utilise R Markdown pour faire notre travail
+
+```{r, echo=TRUE}
+data("cars")
+attach(cars)
+head(cars)
+summary(cars)
+plot(speed, dist, pch=19, col="red")
+```
+
+La moyenne de la variable speed est `r mean(speed)`
+
+La formule chimique de l'eau est : H~2~O
+
+La formule chimique de l'ion cuivre 2 est : Cu^2+^
+
+**Partie 2**
+
+Pour gérer les points, on fait comme ceci:
+
+* Item 1
+  - Item 1a
+  - Item 1b
+* Item 2
+  + Item 2a
+  + Item 2b
+* Je suis fan de R Markdown
+
+
+**Partie 3 **
+
+Pour inclure les images on fait ceci:
+
+![Image about](images/about.jpg)
+
+![Image about](images/home.jpg)
+
+Exemple de formule
+
+Soit l'équation $f(x) = ax^2+bx+c = 0$
+
+Exemple de tableau:
+
+
+First Header  | Second Header | Third Header|
+------------- | ------------- |-------------|
+Content Cell  | Content Cell  |Content Cell |
+Content Cell  | Content Cell  |Content Cell |
+
+```
+Pour écrire du texte en verbatim
+
+```
+```{r}
+# cette fonction renvoie la valeur de x
+trash = function(x){
+  return(x)
+}
+print(trash(x=5))
+```
+
+
+```{r, echo=TRUE}
+```
+
+
+> "Pour travailler avec R, il faut s'entrainer"
+>
+>--- Parole de OWONA Edouard
+
+
+
+**Partie 4**
+```{r, fig.show='hold', out.width="50%", fig.height=3}
+par(mar=c(4,4,0.2,0.1))
+plot(speed, pch=19, col = "blue")
+plot(pressure, pch=17, col="red")
+```
